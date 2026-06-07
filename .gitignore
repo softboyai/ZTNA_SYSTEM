@@ -1,0 +1,16 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# FPDF documentation (not needed in repo)
+lib/doc/
+lib/tutorial/
+lib/makefont/
+lib/FAQ.htm
+lib/changelog.htm
+lib/fpdf.css
+lib/install.txt
