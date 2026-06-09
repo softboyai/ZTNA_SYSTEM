@@ -2,13 +2,55 @@
 /**
  * Online Learning Platform - Student
  * Mount Kigali University - ZTNA System
+ * 
+ * DYNAMIC PAGE - Demonstrates Zero-Trust in action:
+ * - Verifies session and role before access
+ * - Logs this resource access in the database
+ * - Shows which network segment this belongs to
+ * - Displays real user data from database
  */
 session_start();
 require_once '../db_connect.php';
+
+// ZERO-TRUST: Verify identity and role
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
-    header("Location: ../login.php"); exit();
+    // LOG the unauthorized attempt
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $device = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    $blocked_user = $_SESSION['user_id'] ?? 0;
+    $stmt = mysqli_prepare($conn, "INSERT INTO access_logs (user_id, ip_address, device_info, access_status, resource_accessed) VALUES (?, ?, ?, 'denied', 'learning_platform - unauthorized role')");
+    mysqli_stmt_bind_param($stmt, "iss", $blocked_user, $ip, $device);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    
+    header("Location: ../login.php");
+    exit();
 }
+
 $username = $_SESSION['username'];
+$user_id = $_SESSION['user_id'];
+
+// LOG this resource access (proves monitoring is active)
+$ip_address = $_SERVER['REMOTE_ADDR'];
+$stmt = mysqli_prepare($conn, "INSERT INTO resource_access (user_id, resource_name, segment_name, ip_address, access_result) VALUES (?, 'Online Learning Platform', 'Academic Network', ?, 'allowed')");
+mysqli_stmt_bind_param($stmt, "is", $user_id, $ip_address);
+mysqli_stmt_execute($stmt);
+mysqli_stmt_close($stmt);
+
+// Get user's access count to this resource
+$stmt = mysqli_prepare($conn, "SELECT COUNT(*) as visits FROM resource_access WHERE user_id = ? AND resource_name = 'Online Learning Platform'");
+mysqli_stmt_bind_param($stmt, "i", $user_id);
+mysqli_stmt_execute($stmt);
+$visits = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt))['visits'];
+mysqli_stmt_close($stmt);
+
+// Get last access time
+$stmt = mysqli_prepare($conn, "SELECT access_time FROM resource_access WHERE user_id = ? AND resource_name = 'Online Learning Platform' ORDER BY access_time DESC LIMIT 1 OFFSET 1");
+mysqli_stmt_bind_param($stmt, "i", $user_id);
+mysqli_stmt_execute($stmt);
+$last_visit_row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+$last_visit = $last_visit_row ? $last_visit_row['access_time'] : 'First visit';
+mysqli_stmt_close($stmt);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,6 +74,7 @@ $username = $_SESSION['username'];
             <a href="academic_records.php"><span class="nav-icon">&#128196;</span> Academic Records</a>
             <a href="library.php"><span class="nav-icon">&#128214;</span> Library</a>
             <a href="email_comm.php"><span class="nav-icon">&#9993;</span> Email</a>
+            <a href="../my_profile.php"><span class="nav-icon">&#128100;</span> My Security</a>
             <div class="nav-divider"></div>
             <a href="../logout.php"><span class="nav-icon">&#128682;</span> Logout</a>
         </nav>
@@ -46,9 +89,22 @@ $username = $_SESSION['username'];
             </div>
         </header>
         <div class="content-area">
+
+            <!-- ZTNA Verification Banner - Shows the system is working -->
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px;">
+                <p style="color: #155724; font-size: 13px; margin: 0;">
+                    <strong>&#128274; ZTNA Verification Passed:</strong> 
+                    Your identity was verified. Role: <strong>Student</strong> | 
+                    IP: <strong><?php echo htmlspecialchars($ip_address); ?></strong> | 
+                    Segment: <strong>Academic Network</strong> | 
+                    Visit #<?php echo $visits; ?> | 
+                    Last visit: <?php echo $last_visit; ?>
+                </p>
+            </div>
+
             <div class="welcome-section">
                 <h2>&#128218; My Courses</h2>
-                <p>Access your enrolled courses, watch lectures, and submit assignments.</p>
+                <p>Welcome, <?php echo htmlspecialchars($username); ?>. Access your enrolled courses, watch lectures, and submit assignments.</p>
             </div>
 
             <div class="resource-grid">
@@ -86,19 +142,13 @@ $username = $_SESSION['username'];
                 </div>
             </div>
 
-            <div class="table-container" style="margin-top: 30px;">
-                <div class="table-header"><h2>Upcoming Assignments</h2></div>
-                <table class="data-table">
-                    <thead>
-                        <tr><th>Course</th><th>Assignment</th><th>Due Date</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Networking</td><td>Lab Report 5 - Subnetting</td><td>2024-12-15</td><td><span class="badge badge-denied">Pending</span></td></tr>
-                        <tr><td>Cybersecurity</td><td>Research Paper - Zero Trust</td><td>2024-12-18</td><td><span class="badge badge-denied">Pending</span></td></tr>
-                        <tr><td>Database</td><td>Final Project - PHP + MySQL</td><td>2024-12-20</td><td><span class="badge badge-granted">Submitted</span></td></tr>
-                        <tr><td>Web Development</td><td>Portfolio Website</td><td>2024-12-22</td><td><span class="badge badge-denied">Pending</span></td></tr>
-                    </tbody>
-                </table>
+            <!-- Security Notice -->
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 25px; border-left: 4px solid #003366;">
+                <p style="font-size: 12px; color: #555; margin: 0;">
+                    <strong>&#128274; Zero-Trust Notice:</strong> This access has been logged. 
+                    Your activity on this platform is continuously monitored. 
+                    You can view your full access history on the <a href="../my_profile.php" style="color: #003366; font-weight: 600;">My Security</a> page.
+                </p>
             </div>
         </div>
     </main>

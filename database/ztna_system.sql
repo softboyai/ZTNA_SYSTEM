@@ -69,6 +69,21 @@ CREATE TABLE IF NOT EXISTS network_segments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- =====================================================
+-- Table: resource_access
+-- Logs when users access specific resources (proves ZTNA)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS resource_access (
+    access_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    resource_name VARCHAR(255) NOT NULL,
+    segment_name VARCHAR(100),
+    access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(50),
+    access_result ENUM('allowed', 'blocked') DEFAULT 'allowed',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- =====================================================
 -- Sample Users (passwords are bcrypt hashed)
 -- Admin@1234 / Student@1234 / Lecturer@1234 / Staff@1234
 -- =====================================================

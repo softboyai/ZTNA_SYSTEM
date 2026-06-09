@@ -455,4 +455,4 @@ The admin can create and manage security policies that define how the system beh
 
 ---
 
-© 2024 Mount Kigali University | ZTNA System | Developed by INGABIRE GISELE | BBICTR/2024/36790
+© 2026 Mount Kigali University | ZTNA System | Developed by INGABIRE GISELE | BBICTR/2024/36790

@@ -67,6 +67,9 @@ mysqli_stmt_close($stmt);
                 <a href="lecturer/research_portal.php">
                     <span class="nav-icon">&#128300;</span> Research Portal
                 </a>
+                <a href="my_profile.php">
+                    <span class="nav-icon">&#128100;</span> My Security
+                </a>
                 <div class="nav-divider"></div>
                 <a href="logout.php">
                     <span class="nav-icon">&#128682;</span> Logout
